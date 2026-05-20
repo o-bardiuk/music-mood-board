@@ -1,6 +1,6 @@
 # Music Mood Board
 
-[![Screenshot](./screenshot.png)](https://github.com/o-bardiuk/audio-mood-board)
+[![Screenshot](./screenshot.png)](https://github.com/o-bardiuk/music-mood-board)
 
 A single-file local HTML audio player for comparing your own mixes and references side by side. No server, no install — open it in a browser and it works.
 
