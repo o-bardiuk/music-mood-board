@@ -23,7 +23,8 @@ Fixed bar at the bottom of the screen showing:
 - Seek bar with elapsed / total time — click anywhere to jump, or drag to scrub
 - Play/Pause, seek back 5 seconds, seek forward 5 seconds buttons
 - Global volume slider affecting all tracks
-- Repeat-one and play-next toggles for choosing what happens when a track ends
+- Repeat-one and play-next toggles for choosing what happens when a track ends. These modes are mutually exclusive; play-next wraps from the last visible track back to the first.
+- Broken or missing audio files are skipped during playback instead of stopping the player.
 
 ### Per-Track Volume
 Each card has its own volume slider. It multiplies with the global volume, so you can normalize loud references against quieter mixes without touching the master level.

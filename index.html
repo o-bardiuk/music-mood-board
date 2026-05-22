@@ -614,7 +614,7 @@
 </div>
 
 <script>
-const audioFiles = [
+let audioFiles = [
 	{ path: './STUNKIT - Arrival.mp3', tags: ['dnb'], albumCover: 'https://i.scdn.co/image/ab67616d00001e0235781a086e3452ead675dd55' },
 	{ path: './Ollie Wonder - Wave-Rhythm Duality.mp3', tags: ['house'], albumCover: 'https://i.scdn.co/image/ab67616d00001e028b0736fb09f0bc0b232f237e' },
 	{ path: './Shove Covo - Friends For Ever Be Like.mp3', tags: ['indie'], albumCover: 'https://i.scdn.co/image/ab67616d00001e027388f88c8b3d58f97cfc5061' },
@@ -625,6 +625,25 @@ const audioFiles = [
 	// Relative path example
     // { path: './Rec04/Mixdown/sound-4.3.mp3', tags: ['metal'], albumCover: 'https://placehold.co/400/0d0d0f/f564a0?text=sound-4.3' },
 ];
+
+audioFiles = audioFiles.map((file, index) => {
+  if (!file || typeof file.path !== 'string' || file.path.trim() === '') {
+    console.warn(`Skipping audioFiles[${index}]: missing path`);
+    return null;
+  }
+
+  const tags = Array.isArray(file.tags)
+    ? file.tags.filter(tag => typeof tag === 'string' && tag.trim() !== '')
+    : (typeof file.tags === 'string' && file.tags.trim() !== '' ? [file.tags] : []);
+
+  return {
+    path: file.path,
+    tags,
+    albumCover: typeof file.albumCover === 'string' && file.albumCover.trim() !== ''
+      ? file.albumCover
+      : 'https://placehold.co/400/0d0d0f/e8e6e3?text=audio',
+  };
+}).filter(Boolean);
 
 /* derive filename from path, strip extension */
 function fileLabel(path) {
@@ -640,6 +659,7 @@ let currentCard  = null;
 let repeatOne = false;
 let autoNext = false;
 const selectedTags = new Set();
+const failedTrackIndexes = new Set();
 
 /* ── HELPERS ── */
 function fmtTime(s) {
@@ -676,6 +696,25 @@ function playTrackByIndex(idx) {
   return true;
 }
 
+function nextTrackIndex(fromIdx, skipped = new Set()) {
+  const order = visibleTrackIndexes();
+  if (order.length === 0) return -1;
+  const blocked = new Set([...failedTrackIndexes, ...skipped]);
+  const start = order.indexOf(fromIdx);
+
+  for (let offset = 1; offset <= order.length; offset++) {
+    const candidate = order[(start + offset) % order.length];
+    if (!blocked.has(candidate)) return candidate;
+  }
+
+  return -1;
+}
+
+function playNextTrack(fromIdx, skipped = new Set()) {
+  const nextIdx = nextTrackIndex(fromIdx, skipped);
+  return nextIdx >= 0 && playTrackByIndex(nextIdx);
+}
+
 function finishCurrentTrack(eqBars, overlay) {
   setPlayingState(false, eqBars, overlay);
   if (currentCard) currentCard.classList.remove('playing');
@@ -695,14 +734,17 @@ function handleTrackEnded(globalIdx, audio, eqBars, overlay) {
     return;
   }
 
-  if (autoNext) {
-    const order = visibleTrackIndexes();
-    const pos = order.indexOf(globalIdx);
-    const nextIdx = pos >= 0 ? order[pos + 1] : -1;
-    if (nextIdx !== undefined && nextIdx >= 0 && playTrackByIndex(nextIdx)) return;
-  }
+  if (autoNext && playNextTrack(globalIdx)) return;
 
   finishCurrentTrack(eqBars, overlay);
+}
+
+function handleTrackError(globalIdx, eqBars, overlay) {
+  if (currentIndex !== globalIdx) return;
+
+  failedTrackIndexes.add(globalIdx);
+  finishCurrentTrack(eqBars, overlay);
+  playNextTrack(globalIdx, new Set([globalIdx]));
 }
 
 /* ── RENDER TAGS ── */
@@ -880,6 +922,12 @@ function renderList() {
     audio.addEventListener('ended', () => {
       handleTrackEnded(globalIdx, audio, eqBars, overlay);
     });
+    audio.addEventListener('error', () => {
+      handleTrackError(globalIdx, eqBars, overlay);
+    });
+    audio.addEventListener('playing', () => {
+      failedTrackIndexes.delete(globalIdx);
+    });
 
     /* if currently playing this track, restore state */
     if (currentIndex === globalIdx) {
@@ -910,7 +958,7 @@ function playTrack(idx, card, audio, trackVol, eqBars, overlay) {
   /* if same track: toggle */
   if (currentIndex === idx && currentAudio) {
     if (currentAudio.paused) {
-      currentAudio.play();
+      currentAudio.play().catch(() => handleTrackError(idx, eqBars, overlay));
       eqBars.classList.remove('paused');
       document.getElementById('icon-play').style.display = 'none';
       document.getElementById('icon-pause').style.display = '';
@@ -941,7 +989,7 @@ function playTrack(idx, card, audio, trackVol, eqBars, overlay) {
 
   const file = audioFiles[idx];
   audio.volume = Math.min(1, parseFloat(trackVol.value) * globalVolume);
-  audio.play().catch(() => {});
+  audio.play().catch(() => handleTrackError(idx, eqBars, overlay));
 
   /* update card */
   card.classList.add('playing');
@@ -1015,15 +1063,23 @@ function setModeButton(button, active) {
   button.setAttribute('aria-pressed', String(active));
 }
 
+const repeatOneButton = document.getElementById('repeat-one');
+const autoNextButton = document.getElementById('auto-next');
+
 document.getElementById('repeat-one').onclick = e => {
   repeatOne = !repeatOne;
-  setModeButton(e.currentTarget, repeatOne);
+  if (repeatOne) autoNext = false;
+  setModeButton(repeatOneButton, repeatOne);
+  setModeButton(autoNextButton, autoNext);
   if (currentAudio) currentAudio.loop = repeatOne;
 };
 
 document.getElementById('auto-next').onclick = e => {
   autoNext = !autoNext;
-  setModeButton(e.currentTarget, autoNext);
+  if (autoNext) repeatOne = false;
+  setModeButton(autoNextButton, autoNext);
+  setModeButton(repeatOneButton, repeatOne);
+  if (currentAudio) currentAudio.loop = repeatOne;
 };
 
 /* ── CLOSE POPOVERS ON OUTSIDE CLICK ── */
