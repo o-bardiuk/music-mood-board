@@ -23,13 +23,13 @@ Fixed bar at the bottom of the screen showing:
 - Seek bar with elapsed / total time — click anywhere to jump, or drag to scrub
 - Play/Pause, seek back 5 seconds, seek forward 5 seconds buttons
 - Global volume slider affecting all tracks
-- Stop All button that pauses everything and resets the bar
+- Repeat-one and play-next toggles for choosing what happens when a track ends
 
 ### Per-Track Volume
 Each card has its own volume slider. It multiplies with the global volume, so you can normalize loud references against quieter mixes without touching the master level.
 
 ### Genre Filtering
-Tags defined per track (e.g. `dnb`, `house`, `metal`, `ref`) appear as filter pills at the top. Click one or more to narrow the grid to only matching tracks. Each genre gets its own color — both in the filter pills and in the small badges on each card. Click **All** to clear filters.
+Tags defined per track (e.g. `dnb`, `house`, `metal`, `ref`) appear as filter pills at the top. Click one or more to narrow the grid to only matching tracks. The small badges on each card are clickable too. Each genre gets its own color — both in the filter pills and in the small badges on each card. Click **All** to clear filters.
 
 ### File Path Popover
 Each card has a `?` button in the top-right corner of the cover. Pressing it opens a small panel showing the full file path. A **copy path** button copies it to the clipboard — useful for quickly finding a file in your DAW or file explorer.
