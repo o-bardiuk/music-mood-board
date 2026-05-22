@@ -230,7 +230,7 @@
     outline: none;
     cursor: pointer;
     background-image: linear-gradient(var(--muted), var(--muted));
-    background-size: 100% 100%;
+    background-size: 75% 100%;
     background-repeat: no-repeat;
   }
   .card-vol input[type=range]::-webkit-slider-thumb {
@@ -589,9 +589,9 @@
 
 <script>
 const audioFiles = [
-	{ path: '.\STUNKIT - Arrival.mp3', tags: ['dnb'], albumCover: 'https://i.scdn.co/image/ab67616d00001e0235781a086e3452ead675dd55' },
-	{ path: '.\Ollie Wonder - Wave-Rhythm Duality.mp3', tags: ['house'], albumCover: 'https://i.scdn.co/image/ab67616d00001e028b0736fb09f0bc0b232f237e' },
-	{ path: '.\Shove Covo - Friends For Ever Be Like.mp3', tags: ['indie'], albumCover: 'https://i.scdn.co/image/ab67616d00001e027388f88c8b3d58f97cfc5061' },
+	{ path: './STUNKIT - Arrival.mp3', tags: ['dnb'], albumCover: 'https://i.scdn.co/image/ab67616d00001e0235781a086e3452ead675dd55' },
+	{ path: './Ollie Wonder - Wave-Rhythm Duality.mp3', tags: ['house'], albumCover: 'https://i.scdn.co/image/ab67616d00001e028b0736fb09f0bc0b232f237e' },
+	{ path: './Shove Covo - Friends For Ever Be Like.mp3', tags: ['indie'], albumCover: 'https://i.scdn.co/image/ab67616d00001e027388f88c8b3d58f97cfc5061' },
 	// Empty example
     // { path: 'file:///', tags: ['', ''], albumCover: 'https://placehold.co/400' },
 	// Absolute path example
@@ -750,27 +750,39 @@ function renderList() {
     info.appendChild(tagsEl);
     card.appendChild(info);
 
-    /* per-track volume */
+            /* per-track gain */
     const volRow = document.createElement('div');
     volRow.className = 'card-vol';
-    volRow.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`;
+            const gainLabelCard = document.createElement('span');
+            gainLabelCard.style.cssText = 'font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0;';
+            gainLabelCard.textContent = 'gain';
+            volRow.appendChild(gainLabelCard);
     const trackVol = document.createElement('input');
     trackVol.type = 'range';
-    trackVol.min = 0; trackVol.max = 1; trackVol.step = 0.01;
+            trackVol.min = 0; trackVol.max = 1.333; trackVol.step = 0.01;
     trackVol.value = 1;
+            const trackGainPct = document.createElement('span');
+            trackGainPct.style.cssText = 'font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0;min-width:30px;text-align:right;';
+            trackGainPct.textContent = '100%';
     trackVol.onclick = e => e.stopPropagation();
     trackVol.oninput = e => {
       e.stopPropagation();
-      if (currentIndex === globalIdx && currentAudio) currentAudio.volume = parseFloat(e.target.value) * globalVolume;
+                const g = parseFloat(e.target.value);
+                const fillPct = (g / 1.333) * 100;
+                e.target.style.backgroundSize = fillPct.toFixed(1) + '% 100%';
+                trackGainPct.textContent = Math.round(g * 100) + '%';
+                trackGainPct.style.color = g > 1.005 ? 'var(--accent)' : 'var(--muted)';
+                if (currentIndex === globalIdx && currentAudio) currentAudio.volume = Math.min(1, g * globalVolume);
     };
     volRow.appendChild(trackVol);
+            volRow.appendChild(trackGainPct);
     card.appendChild(volRow);
 
     /* hidden audio */
     const audio = document.createElement('audio');
     audio.preload = 'none';
     audio.src = file.path;
-    audio.volume = globalVolume;
+    audio.volume = Math.min(1, 1 * globalVolume); /* gain=1 * globalVolume */
     card.appendChild(audio);
 
     /* click to play */
@@ -845,7 +857,7 @@ function playTrack(idx, card, audio, trackVol, eqBars, overlay) {
   currentCard  = card;
 
   const file = audioFiles[idx];
-  audio.volume = parseFloat(trackVol.value) * globalVolume;
+  audio.volume = Math.min(1, parseFloat(trackVol.value) * globalVolume);
   audio.play().catch(() => {});
 
   /* update card */
@@ -905,11 +917,11 @@ progressBar.addEventListener('input', () => {
 const volSlider = document.getElementById('volume-slider');
 volSlider.addEventListener('input', () => {
   globalVolume = parseFloat(volSlider.value);
-  volSlider.style.backgroundSize = (globalVolume * 100) + '% 100%';
+  volSlider.style.backgroundSize = (globalVolume * 100).toFixed(1) + '% 100%';
   if (currentAudio) {
     const trackVol = currentCard?.querySelector('.card-vol input');
     const tv = trackVol ? parseFloat(trackVol.value) : 1;
-    currentAudio.volume = tv * globalVolume;
+    currentAudio.volume = Math.min(1, tv * globalVolume);
   }
 });
 
