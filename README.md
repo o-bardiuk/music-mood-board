@@ -16,6 +16,7 @@ It's designed for the specific workflow of comparing your own mixes against refe
 - Click any album cover to play or pause that track
 - Starting a new track automatically stops the current one
 - Audio elements use `preload="none"` so files are only loaded when you actually play them
+- Drag audio files onto the page to add temporary cards at the beginning of the list for the current session
 
 ### Now-Playing Bar (bottom)
 Fixed bar at the bottom of the screen showing:

@@ -36,6 +36,25 @@
     min-height: 100vh;
     padding-bottom: calc(var(--bar-h) + 24px);
   }
+  body.drag-over::after {
+    content: "drop audio files";
+    position: fixed;
+    inset: 16px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed var(--accent);
+    border-radius: 10px;
+    background: rgba(13,13,15,0.78);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    pointer-events: none;
+    backdrop-filter: blur(8px);
+  }
 
   /* ── HEADER ── */
   header {
@@ -94,6 +113,7 @@
   .tag-pill[data-tag="house"].selected{ --accent: #f5a064; --accent-dim: rgba(245,160,100,0.12); }
   .tag-pill[data-tag="metal"].selected{ --accent: #f564a0; --accent-dim: rgba(245,100,160,0.12); }
   .tag-pill[data-tag="ref"].selected  { --accent: #a064f5; --accent-dim: rgba(160,100,245,0.12); }
+  .tag-pill[data-tag="dropped"].selected { --accent: #f5d064; --accent-dim: rgba(245,208,100,0.12); }
   .tag-pill[data-tag="indie"].selected  { --accent: #ccf564; --accent-dim: rgba(72, 232, 30, 0.12); }
 
   /* ── GRID ── */
@@ -215,6 +235,7 @@
   .card-tag[data-tag="house"] { color: #f5a064; border-color: rgba(245,160,100,0.35); background: rgba(245,160,100,0.08); }
   .card-tag[data-tag="metal"] { color: #f564a0; border-color: rgba(245,100,160,0.35); background: rgba(245,100,160,0.08); }
   .card-tag[data-tag="ref"]   { color: #a064f5; border-color: rgba(160,100,245,0.35); background: rgba(160,100,245,0.08); }
+  .card-tag[data-tag="dropped"] { color: #f5d064; border-color: rgba(245,208,100,0.35); background: rgba(245,208,100,0.08); }
 
   /* per-track volume */
   .card-vol {
@@ -638,6 +659,8 @@ audioFiles = audioFiles.map((file, index) => {
 
   return {
     path: file.path,
+    src: typeof file.src === 'string' && file.src.trim() !== '' ? file.src : file.path,
+    sourceFile: file.sourceFile || null,
     tags,
     albumCover: typeof file.albumCover === 'string' && file.albumCover.trim() !== ''
       ? file.albumCover
@@ -660,6 +683,7 @@ let repeatOne = false;
 let autoNext = false;
 const selectedTags = new Set();
 const failedTrackIndexes = new Set();
+const droppedObjectUrls = [];
 
 /* ── HELPERS ── */
 function fmtTime(s) {
@@ -667,6 +691,36 @@ function fmtTime(s) {
   const m = Math.floor(s / 60);
   const ss = Math.floor(s % 60).toString().padStart(2, '0');
   return `${m}:${ss}`;
+}
+
+function isAudioFile(file) {
+  return file && (
+    file.type.startsWith('audio/') ||
+    /\.(aac|aif|aiff|flac|m4a|mp3|ogg|opus|wav|webm)$/i.test(file.name)
+  );
+}
+
+function createDroppedTrack(file) {
+  const url = URL.createObjectURL(file);
+  droppedObjectUrls.push(url);
+  return {
+    path: file.name,
+    src: url,
+    sourceFile: file,
+    tags: ['dropped'],
+    albumCover: 'https://placehold.co/400/0d0d0f/f5d064?text=' + file.name,
+  };
+}
+
+function addDroppedAudioFiles(fileList) {
+  const tracks = [...fileList].filter(isAudioFile).map(createDroppedTrack);
+  if (!tracks.length) return;
+
+  audioFiles.unshift(...tracks);
+  if (currentIndex >= 0) currentIndex += tracks.length;
+  selectedTags.clear();
+  renderTags();
+  renderList();
 }
 
 function toggleTagFilter(tag) {
@@ -905,7 +959,7 @@ function renderList() {
     /* hidden audio */
     const audio = document.createElement('audio');
     audio.preload = 'none';
-    audio.src = file.path;
+    audio.src = file.src || file.path;
     audio.volume = Math.min(1, 1 * globalVolume); /* gain=1 * globalVolume */
     card.appendChild(audio);
 
@@ -1083,6 +1137,27 @@ document.getElementById('auto-next').onclick = e => {
 };
 
 /* ── CLOSE POPOVERS ON OUTSIDE CLICK ── */
+/* drag & drop import */
+['dragenter', 'dragover'].forEach(type => {
+  document.addEventListener(type, e => {
+    const hasFiles = [...(e.dataTransfer?.items || [])].some(item => item.kind === 'file');
+    if (!hasFiles) return;
+    e.preventDefault();
+    document.body.classList.add('drag-over');
+  });
+});
+
+document.addEventListener('dragleave', e => {
+  if (e.relatedTarget) return;
+  document.body.classList.remove('drag-over');
+});
+
+document.addEventListener('drop', e => {
+  e.preventDefault();
+  document.body.classList.remove('drag-over');
+  addDroppedAudioFiles(e.dataTransfer?.files || []);
+});
+
 document.addEventListener('click', e => {
   if (!e.target.closest('.info-btn') && !e.target.closest('.path-popover')) {
     document.querySelectorAll('.path-popover.open').forEach(p => p.classList.remove('open'));
