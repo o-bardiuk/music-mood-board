@@ -606,8 +606,9 @@
 <script>
   let audioFiles = [
     { path: './STUNKIT - Arrival.mp3', tags: ['dnb'], cues: ['00:11', '0:30', '01:50', "1:05:30"], albumCover: 'https://i.scdn.co/image/ab67616d00001e0235781a086e3452ead675dd55' },
-    { path: './Ollie Wonder - Wave-Rhythm Duality.mp3', tags: ['house'], albumCover: 'https://i.scdn.co/image/ab67616d00001e028b0736fb09f0bc0b232f237e' },
-    { path: './Shove Covo - Friends For Ever Be Like.mp3', tags: ['indie'], albumCover: 'https://i.scdn.co/image/ab67616d00001e027388f88c8b3d58f97cfc5061' },
+    { path: './Ollie Wonder - Wave-Rhythm Duality.mp3', group: 'group-1', tags: ['house'], albumCover: 'https://i.scdn.co/image/ab67616d00001e028b0736fb09f0bc0b232f237e' },
+    { path: './Ollie Wonder - Wave-Rhythm Duality.mp3', group: 'group-1', tags: ['house'], albumCover: 'https://i.scdn.co/image/ab67616d00001e028b0736fb09f0bc0b232f237e' },
+    { path: './Shove Covo - Friends For Ever Be Like.mp3', group: 'group-2', tags: ['indie'], albumCover: 'https://i.scdn.co/image/ab67616d00001e027388f88c8b3d58f97cfc5061' },
     // Empty example
     // { path: 'file:///', tags: ['', ''], albumCover: 'https://placehold.co/400' },
     // Absolute path example
@@ -702,6 +703,7 @@ audioFiles = audioFiles.map((file, index) => {
     src: typeof file.src === 'string' && file.src.trim() !== '' ? file.src : file.path,
     sourceFile: file.sourceFile || null,
     tags,
+    group: typeof file.group === 'string' && file.group.trim() !== '' ? file.group.trim() : null,
     cues: Array.isArray(file.cues) ? file.cues.filter(cue => typeof cue === 'string' && cue.trim() !== '') : [],
     cueTimes: Array.isArray(file.cues) ? file.cues.map(parseCueTime).filter(Number.isFinite) : [],
     albumCover: typeof file.albumCover === 'string' && file.albumCover.trim() !== ''
@@ -709,6 +711,12 @@ audioFiles = audioFiles.map((file, index) => {
       : 'https://placehold.co/400/0d0d0f/e8e6e3?text=audio',
   };
 }).filter(Boolean);
+
+const groupCounts = new Map();
+audioFiles.forEach(file => {
+  if (!file.group) return;
+  groupCounts.set(file.group, (groupCounts.get(file.group) || 0) + 1);
+});
 
 /* derive filename from path, strip extension */
 function fileLabel(path) {
@@ -726,6 +734,7 @@ let autoNext = false;
 const selectedTags = new Set();
 const failedTrackIndexes = new Set();
 const droppedObjectUrls = [];
+const groupPlaybackTimes = new Map();
 
 /* ── HELPERS ── */
 function fmtTime(s) {
@@ -733,6 +742,27 @@ function fmtTime(s) {
   const m = Math.floor(s / 60);
   const ss = Math.floor(s % 60).toString().padStart(2, '0');
   return `${m}:${ss}`;
+}
+
+function hasSharedGroup(file) {
+  return !!file?.group && (groupCounts.get(file.group) || 0) > 1;
+}
+
+function rememberGroupPlaybackTime(idx, audio) {
+  const file = audioFiles[idx];
+  if (!hasSharedGroup(file) || !audio || !Number.isFinite(audio.currentTime)) return;
+  groupPlaybackTimes.set(file.group, audio.currentTime);
+}
+
+function sharedGroupPlaybackTime(file) {
+  if (!hasSharedGroup(file)) return null;
+  const time = groupPlaybackTimes.get(file.group);
+  return Number.isFinite(time) ? time : null;
+}
+
+function seekAudio(audio, seconds) {
+  if (!audio || !Number.isFinite(seconds)) return;
+  audio.currentTime = Math.max(0, audio.duration ? Math.min(seconds, audio.duration) : seconds);
 }
 
 function parseCueTime(value) {
@@ -764,6 +794,7 @@ function createDroppedTrack(file) {
     src: url,
     sourceFile: file,
     tags: ['dropped'],
+    group: null,
     cues: [],
     cueTimes: [],
     albumCover: 'https://placehold.co/400/0d0d0f/f5d064?text=' + file.name,
@@ -811,7 +842,8 @@ function renderCueButtons(file) {
     btn.setAttribute('aria-label', `Jump to cue ${index + 1}`);
     btn.onclick = () => {
       if (!currentAudio) return;
-      currentAudio.currentTime = Math.min(seconds, currentAudio.duration || seconds);
+      seekAudio(currentAudio, seconds);
+      rememberGroupPlaybackTime(currentIndex, currentAudio);
       updateProgress(currentAudio);
     };
     c.appendChild(btn);
@@ -1050,7 +1082,12 @@ function renderList() {
       if (currentIndex === globalIdx) updateProgress(audio);
     });
     audio.addEventListener('loadedmetadata', () => {
-      if (currentIndex === globalIdx) document.getElementById('time-dur').textContent = fmtTime(audio.duration);
+      if (currentIndex === globalIdx) {
+        const sharedTime = sharedGroupPlaybackTime(audioFiles[globalIdx]);
+        if (sharedTime !== null) seekAudio(audio, sharedTime);
+        document.getElementById('time-dur').textContent = fmtTime(audio.duration);
+        updateProgress(audio);
+      }
     });
     audio.addEventListener('ended', () => {
       handleTrackEnded(globalIdx, audio, eqBars, overlay);
@@ -1106,6 +1143,7 @@ function playTrack(idx, card, audio, trackVol, eqBars, overlay) {
 
   /* stop previous */
   if (currentAudio) {
+    rememberGroupPlaybackTime(currentIndex, currentAudio);
     currentAudio.pause();
     if (currentCard) {
       currentCard.classList.remove('playing');
@@ -1121,6 +1159,8 @@ function playTrack(idx, card, audio, trackVol, eqBars, overlay) {
   currentAudio.loop = repeatOne;
 
   const file = audioFiles[idx];
+  const sharedTime = sharedGroupPlaybackTime(file);
+  if (sharedTime !== null) seekAudio(audio, sharedTime);
   audio.volume = Math.min(1, parseFloat(trackVol.value) * globalVolume);
   audio.play().catch(() => handleTrackError(idx, eqBars, overlay));
 
@@ -1140,6 +1180,7 @@ function playTrack(idx, card, audio, trackVol, eqBars, overlay) {
 
 function updateProgress(audio) {
   if (!audio.duration) return;
+  rememberGroupPlaybackTime(currentIndex, audio);
   const pct = (audio.currentTime / audio.duration) * 100;
   const bar = document.getElementById('progress-bar');
   bar.value = pct;
@@ -1165,16 +1206,23 @@ document.getElementById('btn-play').onclick = () => {
 };
 
 document.getElementById('btn-seek-back').onclick = () => {
-  if (currentAudio) currentAudio.currentTime = Math.max(0, currentAudio.currentTime - 5);
+  if (currentAudio) {
+    currentAudio.currentTime = Math.max(0, currentAudio.currentTime - 5);
+    rememberGroupPlaybackTime(currentIndex, currentAudio);
+  }
 };
 document.getElementById('btn-seek-fwd').onclick = () => {
-  if (currentAudio) currentAudio.currentTime = Math.min(currentAudio.duration || 0, currentAudio.currentTime + 5);
+  if (currentAudio) {
+    currentAudio.currentTime = Math.min(currentAudio.duration || 0, currentAudio.currentTime + 5);
+    rememberGroupPlaybackTime(currentIndex, currentAudio);
+  }
 };
 
 const progressBar = document.getElementById('progress-bar');
 progressBar.addEventListener('input', () => {
   if (currentAudio && currentAudio.duration) {
     currentAudio.currentTime = (progressBar.value / 100) * currentAudio.duration;
+    rememberGroupPlaybackTime(currentIndex, currentAudio);
     progressBar.style.backgroundSize = progressBar.value + '% 100%';
   }
 });

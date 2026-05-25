@@ -24,6 +24,7 @@ Fixed bar at the bottom of the screen showing:
 - Seek bar with elapsed / total time — click anywhere to jump, or drag to scrub
 - Optional numbered cue buttons for quick jumps within the current track
 - Play/Pause, seek back 5 seconds, seek forward 5 seconds buttons
+- Optional track groups for comparing different mixes at the same playback time
 - Global volume slider affecting all tracks
 - Repeat-one and play-next toggles for choosing what happens when a track ends. These modes are mutually exclusive; play-next wraps from the last visible track back to the first.
 - Broken or missing audio files are skipped during playback instead of stopping the player.
@@ -58,6 +59,7 @@ const audioFiles = [
   {
     path: 'file:///D:/Cubase Projects/MyProject/mix.mp3',
     tags: ['house'],
+    group: 'song-a',
     cues: ['00:11', '1:05:30'],
     albumCover: 'https://example.com/cover.jpg',
   },
@@ -69,6 +71,7 @@ const audioFiles = [
 |-------|-------------|
 | `path` | Absolute local path (`file:///...`) or relative path (`./folder/file.mp3`) |
 | `tags` | Array of genre strings — used for filtering and color coding |
+| `group` | Optional shared playback group. When two or more tracks use the same group, switching between them keeps the same playback time. |
 | `cues` | Optional array of cue times. Use `M:SS`, `MM:SS`, or `H:MM:SS`; buttons are numbered automatically. |
 | `albumCover` | Any image URL or local relative path |
 
