@@ -22,6 +22,7 @@ It's designed for the specific workflow of comparing your own mixes against refe
 Fixed bar at the bottom of the screen showing:
 - Thumbnail, filename, and genre tags of the current track
 - Seek bar with elapsed / total time — click anywhere to jump, or drag to scrub
+- Optional numbered cue buttons for quick jumps within the current track
 - Play/Pause, seek back 5 seconds, seek forward 5 seconds buttons
 - Global volume slider affecting all tracks
 - Repeat-one and play-next toggles for choosing what happens when a track ends. These modes are mutually exclusive; play-next wraps from the last visible track back to the first.
@@ -57,6 +58,7 @@ const audioFiles = [
   {
     path: 'file:///D:/Cubase Projects/MyProject/mix.mp3',
     tags: ['house'],
+    cues: ['00:11', '1:05:30'],
     albumCover: 'https://example.com/cover.jpg',
   },
   // ...
@@ -67,6 +69,7 @@ const audioFiles = [
 |-------|-------------|
 | `path` | Absolute local path (`file:///...`) or relative path (`./folder/file.mp3`) |
 | `tags` | Array of genre strings — used for filtering and color coding |
+| `cues` | Optional array of cue times. Use `M:SS`, `MM:SS`, or `H:MM:SS`; buttons are numbered automatically. |
 | `albumCover` | Any image URL or local relative path |
 
 The card title is derived automatically from the filename in `path` (extension stripped), so no separate label field is needed.
