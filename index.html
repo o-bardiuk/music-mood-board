@@ -94,6 +94,7 @@
   .tag-pill[data-tag="house"].selected{ --accent: #f5a064; --accent-dim: rgba(245,160,100,0.12); }
   .tag-pill[data-tag="metal"].selected{ --accent: #f564a0; --accent-dim: rgba(245,100,160,0.12); }
   .tag-pill[data-tag="ref"].selected  { --accent: #a064f5; --accent-dim: rgba(160,100,245,0.12); }
+  .tag-pill[data-tag="indie"].selected  { --accent: #ccf564; --accent-dim: rgba(72, 232, 30, 0.12); }
 
   /* ── GRID ── */
   #audio-list {
@@ -543,10 +544,21 @@
 </head>
 <body>
 
-<header>
-  <h1>Music Mood Board</h1>
-  <span id="track-count"></span>
-</header>
+<header><h1>Music Mood Board</h1><span id="track-count"></span></header>
+
+<script>
+  let audioFiles = [
+    { path: './STUNKIT - Arrival.mp3', tags: ['dnb'], albumCover: 'https://i.scdn.co/image/ab67616d00001e0235781a086e3452ead675dd55' },
+    { path: './Ollie Wonder - Wave-Rhythm Duality.mp3', tags: ['house'], albumCover: 'https://i.scdn.co/image/ab67616d00001e028b0736fb09f0bc0b232f237e' },
+    { path: './Shove Covo - Friends For Ever Be Like.mp3', tags: ['indie'], albumCover: 'https://i.scdn.co/image/ab67616d00001e027388f88c8b3d58f97cfc5061' },
+    // Empty example
+    // { path: 'file:///', tags: ['', ''], albumCover: 'https://placehold.co/400' },
+    // Absolute path example
+    //{ path: 'file:///d:/Cubase Projects/Untitled-510/Audio/dnb-demo.mp3', tags: ['dnb'], albumCover: 'https://placehold.co/400/0d0d0f/64c8f5?text=DNB' },
+    // Relative path example
+    // { path: './Rec04/Mixdown/sound-4.3.mp3', tags: ['metal'], albumCover: 'https://placehold.co/400/0d0d0f/f564a0?text=sound-4.3' },
+  ];
+</script>
 
 <div class="kbd-hint">
   <kbd>Space</kbd> play/pause &nbsp; <kbd>←</kbd><kbd>→</kbd> seek 5s &nbsp; click cover to play
@@ -614,18 +626,6 @@
 </div>
 
 <script>
-let audioFiles = [
-	{ path: './STUNKIT - Arrival.mp3', tags: ['dnb'], albumCover: 'https://i.scdn.co/image/ab67616d00001e0235781a086e3452ead675dd55' },
-	{ path: './Ollie Wonder - Wave-Rhythm Duality.mp3', tags: ['house'], albumCover: 'https://i.scdn.co/image/ab67616d00001e028b0736fb09f0bc0b232f237e' },
-	{ path: './Shove Covo - Friends For Ever Be Like.mp3', tags: ['indie'], albumCover: 'https://i.scdn.co/image/ab67616d00001e027388f88c8b3d58f97cfc5061' },
-	// Empty example
-    // { path: 'file:///', tags: ['', ''], albumCover: 'https://placehold.co/400' },
-	// Absolute path example
-    //{ path: 'file:///d:/Cubase Projects/Untitled-510/Audio/dnb-demo.mp3', tags: ['dnb'], albumCover: 'https://placehold.co/400/0d0d0f/64c8f5?text=DNB' },
-	// Relative path example
-    // { path: './Rec04/Mixdown/sound-4.3.mp3', tags: ['metal'], albumCover: 'https://placehold.co/400/0d0d0f/f564a0?text=sound-4.3' },
-];
-
 audioFiles = audioFiles.map((file, index) => {
   if (!file || typeof file.path !== 'string' || file.path.trim() === '') {
     console.warn(`Skipping audioFiles[${index}]: missing path`);
