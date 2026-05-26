@@ -326,14 +326,14 @@ function renderCueButtons(file) {
   });
 }
 
-function playTrackByIndex(idx) {
+function playTrackByIndex(idx, options = {}) {
   const card = document.querySelector(`.audio-item[data-idx="${idx}"]`);
   if (!card || card.classList.contains('broken')) return false;
   const trackVol = card.querySelector('.card-vol input');
   const eqBars = card.querySelector('.eq-bars');
   const overlay = card.querySelector('.play-overlay');
   const audio = getTrackAudio(idx);
-  playTrack(idx, card, audio, trackVol, eqBars, overlay);
+  playTrack(idx, card, audio, trackVol, eqBars, overlay, options);
   return true;
 }
 
@@ -360,8 +360,13 @@ function getTrackAudio(globalIdx) {
   });
   audio.addEventListener('loadedmetadata', () => {
     if (currentAudio === audio) {
-      const sharedTime = sharedGroupPlaybackTime(file);
-      if (sharedTime !== null) seekAudio(audio, sharedTime);
+      if (audio._resetOnMetadata) {
+        seekAudio(audio, 0);
+        audio._resetOnMetadata = false;
+      } else if (audio._useSharedTime !== false) {
+        const sharedTime = sharedGroupPlaybackTime(file);
+        if (sharedTime !== null) seekAudio(audio, sharedTime);
+      }
       document.getElementById('time-dur').textContent = fmtTime(audio.duration);
       updateProgress(audio);
     }
@@ -396,9 +401,9 @@ function nextTrackIndex(fromIdx, skipped = new Set()) {
   return -1;
 }
 
-function playNextTrack(fromIdx, skipped = new Set()) {
+function playNextTrack(fromIdx, skipped = new Set(), options = {}) {
   const nextIdx = nextTrackIndex(fromIdx, skipped);
-  return nextIdx >= 0 && playTrackByIndex(nextIdx);
+  return nextIdx >= 0 && playTrackByIndex(nextIdx, options);
 }
 
 function finishCurrentTrack(eqBars, overlay) {
@@ -431,7 +436,7 @@ function handleTrackEnded(globalIdx, audio) {
     return;
   }
 
-  if (autoNext && playNextTrack(globalIdx)) return;
+  if (autoNext && playNextTrack(globalIdx, new Set(), { resetPosition: true, useSharedTime: false })) return;
 
   finishCurrentTrack(eqBars, overlay);
 }
@@ -442,7 +447,7 @@ function handleTrackError(globalIdx) {
 
   markTrackBroken(globalIdx);
   finishCurrentTrack(eqBars, overlay);
-  if (autoNext) playNextTrack(globalIdx, new Set([globalIdx]));
+  if (autoNext) playNextTrack(globalIdx, new Set([globalIdx]), { resetPosition: true, useSharedTime: false });
 }
 
 /* ── RENDER TAGS ── */
@@ -655,7 +660,7 @@ function setPlayingState(playing, eqBars, overlay) {
   }
 }
 
-function playTrack(idx, card, audio, trackVol, eqBars, overlay) {
+function playTrack(idx, card, audio, trackVol, eqBars, overlay, options = {}) {
   if (failedTrackIndexes.has(idx)) {
     card.classList.add('broken');
     return;
@@ -696,8 +701,14 @@ function playTrack(idx, card, audio, trackVol, eqBars, overlay) {
   currentAudio.loop = repeatOne;
 
   const file = audioFiles[idx];
-  const sharedTime = sharedGroupPlaybackTime(file);
-  if (sharedTime !== null) seekAudio(audio, sharedTime);
+  audio._useSharedTime = options.useSharedTime !== false;
+  audio._resetOnMetadata = !!options.resetPosition;
+  if (options.resetPosition) {
+    seekAudio(audio, 0);
+  } else if (audio._useSharedTime) {
+    const sharedTime = sharedGroupPlaybackTime(file);
+    if (sharedTime !== null) seekAudio(audio, sharedTime);
+  }
   audio.volume = Math.min(1, parseFloat(trackVol.value) * globalVolume);
   audio.play().catch(() => handleTrackError(idx));
 
