@@ -533,9 +533,10 @@
   }
 
   /* ── INFO BUTTON & POPOVER ── */
-  .info-btn {
+  .info-btn,
+  .group-btn {
     position: absolute;
-    top: 8px; right: 8px;
+    top: 8px;
     width: 22px; height: 22px;
     border-radius: 50%;
     background: rgba(0,0,0,0.55);
@@ -551,7 +552,17 @@
     transition: color 0.15s, border-color 0.15s, background 0.15s;
     backdrop-filter: blur(4px);
   }
-  .info-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.3); background: rgba(0,0,0,0.75); }
+  .info-btn { right: 8px; }
+  .group-btn { left: 8px; }
+  .info-btn:hover,
+  .group-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.3); background: rgba(0,0,0,0.75); }
+  .group-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--group-color);
+    box-shadow: 0 0 9px var(--group-color);
+  }
 
   .path-popover {
     display: none;
@@ -605,10 +616,10 @@
 
 <script>
   let audioFiles = [
-    { path: './STUNKIT - Arrival.mp3', tags: ['dnb'], cues: ['00:11', '0:30', '01:50', "1:05:30"], albumCover: 'https://i.scdn.co/image/ab67616d00001e0235781a086e3452ead675dd55' },
+    { path: './STUNKIT - Arrival.mp3', tags: ['dnb'], cues: ['01:07', '1:51', '3:21'], albumCover: 'https://i.scdn.co/image/ab67616d00001e0235781a086e3452ead675dd55' },
     { path: './Ollie Wonder - Wave-Rhythm Duality.mp3', group: 'group-1', tags: ['house'], albumCover: 'https://i.scdn.co/image/ab67616d00001e028b0736fb09f0bc0b232f237e' },
-    { path: './Ollie Wonder - Wave-Rhythm Duality.mp3', group: 'group-1', tags: ['house'], albumCover: 'https://i.scdn.co/image/ab67616d00001e028b0736fb09f0bc0b232f237e' },
-    { path: './Shove Covo - Friends For Ever Be Like.mp3', group: 'group-2', tags: ['indie'], albumCover: 'https://i.scdn.co/image/ab67616d00001e027388f88c8b3d58f97cfc5061' },
+    { path: './Ollie Wonder - Wave-Rhythm Duality (old).mp3', group: 'group-1', tags: ['house'], albumCover: 'https://placehold.co/400?text=old' },
+    { path: './Shove Covo - Friends For Ever Be Like.mp3', tags: ['indie'], albumCover: 'https://i.scdn.co/image/ab67616d00001e027388f88c8b3d58f97cfc5061' },
     // Empty example
     // { path: 'file:///', tags: ['', ''], albumCover: 'https://placehold.co/400' },
     // Absolute path example
@@ -717,6 +728,7 @@ audioFiles.forEach(file => {
   if (!file.group) return;
   groupCounts.set(file.group, (groupCounts.get(file.group) || 0) + 1);
 });
+const groupColors = new Map();
 
 /* derive filename from path, strip extension */
 function fileLabel(path) {
@@ -746,6 +758,20 @@ function fmtTime(s) {
 
 function hasSharedGroup(file) {
   return !!file?.group && (groupCounts.get(file.group) || 0) > 1;
+}
+
+function colorForGroup(group) {
+  if (groupColors.has(group)) return groupColors.get(group);
+
+  let hash = 0;
+  for (let i = 0; i < group.length; i++) {
+    hash = ((hash << 5) - hash + group.charCodeAt(i)) | 0;
+  }
+
+  const hue = Math.abs(hash) % 360;
+  const color = `hsl(${hue} 80% 80%)`;
+  groupColors.set(group, color);
+  return color;
 }
 
 function rememberGroupPlaybackTime(idx, audio) {
@@ -972,6 +998,19 @@ function renderList() {
     }
     coverWrap.appendChild(overlay);
     coverWrap.appendChild(eqBars);
+
+    if (hasSharedGroup(file)) {
+      const groupBtn = document.createElement('div');
+      groupBtn.className = 'group-btn';
+      groupBtn.title = `Group: ${file.group}`;
+      groupBtn.setAttribute('aria-label', `Group ${file.group}`);
+      groupBtn.style.setProperty('--group-color', colorForGroup(file.group));
+
+      const groupDot = document.createElement('span');
+      groupDot.className = 'group-dot';
+      groupBtn.appendChild(groupDot);
+      coverWrap.appendChild(groupBtn);
+    }
 
     /* ? info button + path popover */
     const infoBtn = document.createElement('button');
