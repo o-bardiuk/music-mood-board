@@ -259,12 +259,30 @@ function createDroppedTrack(file) {
   };
 }
 
+function shiftTrackStateIndexes(offset) {
+  if (offset <= 0) return;
+
+  const shiftedAudios = new Map();
+  trackAudios.forEach((audio, idx) => {
+    shiftedAudios.set(idx + offset, audio);
+  });
+  trackAudios.clear();
+  shiftedAudios.forEach((audio, idx) => trackAudios.set(idx, audio));
+
+  const shiftedFailures = new Set();
+  failedTrackIndexes.forEach(idx => shiftedFailures.add(idx + offset));
+  failedTrackIndexes.clear();
+  shiftedFailures.forEach(idx => failedTrackIndexes.add(idx));
+
+  if (currentIndex >= 0) currentIndex += offset;
+}
+
 function addDroppedAudioFiles(fileList) {
   const tracks = [...fileList].filter(isAudioFile).map(createDroppedTrack);
   if (!tracks.length) return;
 
+  shiftTrackStateIndexes(tracks.length);
   audioFiles.unshift(...tracks);
-  if (currentIndex >= 0) currentIndex += tracks.length;
   selectedTags.clear();
   renderTags();
   renderList();
@@ -338,25 +356,26 @@ function getTrackAudio(globalIdx) {
   audio.volume = globalVolume;
 
   audio.addEventListener('timeupdate', () => {
-    if (currentIndex === globalIdx) updateProgress(audio);
+    if (currentAudio === audio) updateProgress(audio);
   });
   audio.addEventListener('loadedmetadata', () => {
-    if (currentIndex === globalIdx) {
-      const sharedTime = sharedGroupPlaybackTime(audioFiles[globalIdx]);
+    if (currentAudio === audio) {
+      const sharedTime = sharedGroupPlaybackTime(file);
       if (sharedTime !== null) seekAudio(audio, sharedTime);
       document.getElementById('time-dur').textContent = fmtTime(audio.duration);
       updateProgress(audio);
     }
   });
   audio.addEventListener('ended', () => {
-    handleTrackEnded(globalIdx, audio);
+    handleTrackEnded(audioFiles.indexOf(file), audio);
   });
   audio.addEventListener('error', () => {
-    handleTrackError(globalIdx);
+    handleTrackError(audioFiles.indexOf(file));
   });
   audio.addEventListener('playing', () => {
-    failedTrackIndexes.delete(globalIdx);
-    currentVisuals(globalIdx).card?.classList.remove('broken');
+    const idx = audioFiles.indexOf(file);
+    failedTrackIndexes.delete(idx);
+    currentVisuals(idx).card?.classList.remove('broken');
   });
 
   trackAudios.set(globalIdx, audio);
