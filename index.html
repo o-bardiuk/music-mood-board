@@ -799,6 +799,7 @@ const selectedTags = new Set();
 const failedTrackIndexes = new Set();
 const droppedObjectUrls = [];
 const groupPlaybackTimes = new Map();
+const trackAudios = new Map();
 
 /* ── HELPERS ── */
 function fmtTime(s) {
@@ -931,12 +932,56 @@ function renderCueButtons(file) {
 function playTrackByIndex(idx) {
   const card = document.querySelector(`.audio-item[data-idx="${idx}"]`);
   if (!card || card.classList.contains('broken')) return false;
-  const audio = card.querySelector('audio');
   const trackVol = card.querySelector('.card-vol input');
   const eqBars = card.querySelector('.eq-bars');
   const overlay = card.querySelector('.play-overlay');
+  const audio = getTrackAudio(idx);
   playTrack(idx, card, audio, trackVol, eqBars, overlay);
   return true;
+}
+
+function currentVisuals(idx) {
+  const card = document.querySelector(`.audio-item[data-idx="${idx}"]`);
+  return {
+    card,
+    eqBars: card?.querySelector('.eq-bars') || null,
+    overlay: card?.querySelector('.play-overlay') || null,
+  };
+}
+
+function getTrackAudio(globalIdx) {
+  if (trackAudios.has(globalIdx)) return trackAudios.get(globalIdx);
+
+  const file = audioFiles[globalIdx];
+  const audio = new Audio();
+  audio.preload = 'none';
+  audio.src = file.src || file.path;
+  audio.volume = globalVolume;
+
+  audio.addEventListener('timeupdate', () => {
+    if (currentIndex === globalIdx) updateProgress(audio);
+  });
+  audio.addEventListener('loadedmetadata', () => {
+    if (currentIndex === globalIdx) {
+      const sharedTime = sharedGroupPlaybackTime(audioFiles[globalIdx]);
+      if (sharedTime !== null) seekAudio(audio, sharedTime);
+      document.getElementById('time-dur').textContent = fmtTime(audio.duration);
+      updateProgress(audio);
+    }
+  });
+  audio.addEventListener('ended', () => {
+    handleTrackEnded(globalIdx, audio);
+  });
+  audio.addEventListener('error', () => {
+    handleTrackError(globalIdx);
+  });
+  audio.addEventListener('playing', () => {
+    failedTrackIndexes.delete(globalIdx);
+    currentVisuals(globalIdx).card?.classList.remove('broken');
+  });
+
+  trackAudios.set(globalIdx, audio);
+  return audio;
 }
 
 function nextTrackIndex(fromIdx, skipped = new Set()) {
@@ -959,7 +1004,12 @@ function playNextTrack(fromIdx, skipped = new Set()) {
 }
 
 function finishCurrentTrack(eqBars, overlay) {
-  setPlayingState(false, eqBars, overlay);
+  if (!eqBars || !overlay) {
+    const visuals = currentVisuals(currentIndex);
+    eqBars = visuals.eqBars;
+    overlay = visuals.overlay;
+  }
+  if (eqBars && overlay) setPlayingState(false, eqBars, overlay);
   if (currentCard) currentCard.classList.remove('playing');
   document.getElementById('icon-play').style.display = '';
   document.getElementById('icon-pause').style.display = 'none';
@@ -970,13 +1020,14 @@ function markTrackBroken(globalIdx) {
   document.querySelector(`.audio-item[data-idx="${globalIdx}"]`)?.classList.add('broken');
 }
 
-function handleTrackEnded(globalIdx, audio, eqBars, overlay) {
+function handleTrackEnded(globalIdx, audio) {
   if (currentIndex !== globalIdx) return;
+  const { eqBars, overlay } = currentVisuals(globalIdx);
 
   if (repeatOne) {
     audio.currentTime = 0;
     audio.play().catch(() => {});
-    setPlayingState(true, eqBars, overlay);
+    if (eqBars && overlay) setPlayingState(true, eqBars, overlay);
     document.getElementById('icon-play').style.display = 'none';
     document.getElementById('icon-pause').style.display = '';
     return;
@@ -987,8 +1038,9 @@ function handleTrackEnded(globalIdx, audio, eqBars, overlay) {
   finishCurrentTrack(eqBars, overlay);
 }
 
-function handleTrackError(globalIdx, eqBars, overlay) {
+function handleTrackError(globalIdx) {
   if (currentIndex !== globalIdx) return;
+  const { eqBars, overlay } = currentVisuals(globalIdx);
 
   markTrackBroken(globalIdx);
   finishCurrentTrack(eqBars, overlay);
@@ -1173,49 +1225,23 @@ function renderList() {
             volRow.appendChild(trackGainPct);
     card.appendChild(volRow);
 
-    /* hidden audio */
-    const audio = document.createElement('audio');
-    audio.preload = 'none';
-    audio.src = file.src || file.path;
-    audio.volume = Math.min(1, 1 * globalVolume); /* gain=1 * globalVolume */
-    card.appendChild(audio);
+    const audio = getTrackAudio(globalIdx);
+    audio.volume = Math.min(1, parseFloat(trackVol.value) * globalVolume);
 
     /* click to play */
     coverWrap.addEventListener('click', () => playTrack(globalIdx, card, audio, trackVol, eqBars, overlay));
 
-    /* progress sync */
-    audio.addEventListener('timeupdate', () => {
-      if (currentIndex === globalIdx) updateProgress(audio);
-    });
-    audio.addEventListener('loadedmetadata', () => {
-      if (currentIndex === globalIdx) {
-        const sharedTime = sharedGroupPlaybackTime(audioFiles[globalIdx]);
-        if (sharedTime !== null) seekAudio(audio, sharedTime);
-        document.getElementById('time-dur').textContent = fmtTime(audio.duration);
-        updateProgress(audio);
-      }
-    });
-    audio.addEventListener('ended', () => {
-      handleTrackEnded(globalIdx, audio, eqBars, overlay);
-    });
-    audio.addEventListener('error', () => {
-      handleTrackError(globalIdx, eqBars, overlay);
-    });
-    audio.addEventListener('playing', () => {
-      failedTrackIndexes.delete(globalIdx);
-      card.classList.remove('broken');
-    });
-
     /* if currently playing this track, restore state */
     if (currentIndex === globalIdx) {
       card.classList.add('playing');
-      eqBars.classList.remove('paused');
+      eqBars.classList.toggle('paused', audio.paused);
       currentCard = card;
     }
     if (failedTrackIndexes.has(globalIdx)) card.classList.add('broken');
 
     list.appendChild(card);
   });
+  syncVisiblePlaybackState();
 }
 
 function setPlayingState(playing, eqBars, overlay) {
@@ -1240,13 +1266,14 @@ function playTrack(idx, card, audio, trackVol, eqBars, overlay) {
   /* if same track: toggle */
   if (currentIndex === idx && currentAudio) {
     if (currentAudio.paused) {
-      currentAudio.play().catch(() => handleTrackError(idx, eqBars, overlay));
-      eqBars.classList.remove('paused');
+      currentAudio.play().catch(() => handleTrackError(idx));
+      eqBars?.classList.remove('paused');
+      card?.classList.add('playing');
       document.getElementById('icon-play').style.display = 'none';
       document.getElementById('icon-pause').style.display = '';
     } else {
       currentAudio.pause();
-      eqBars.classList.add('paused');
+      eqBars?.classList.add('paused');
       document.getElementById('icon-play').style.display = '';
       document.getElementById('icon-pause').style.display = 'none';
     }
@@ -1274,11 +1301,11 @@ function playTrack(idx, card, audio, trackVol, eqBars, overlay) {
   const sharedTime = sharedGroupPlaybackTime(file);
   if (sharedTime !== null) seekAudio(audio, sharedTime);
   audio.volume = Math.min(1, parseFloat(trackVol.value) * globalVolume);
-  audio.play().catch(() => handleTrackError(idx, eqBars, overlay));
+  audio.play().catch(() => handleTrackError(idx));
 
   /* update card */
-  card.classList.add('playing');
-  eqBars.classList.remove('paused');
+  card?.classList.add('playing');
+  eqBars?.classList.remove('paused');
 
   /* update bar */
   document.getElementById('now-thumb').src = file.albumCover;
@@ -1301,17 +1328,32 @@ function updateProgress(audio) {
   document.getElementById('time-dur').textContent = fmtTime(audio.duration);
 }
 
+function syncVisiblePlaybackState() {
+  document.querySelectorAll('.audio-item').forEach(card => {
+    const idx = Number(card.dataset.idx);
+    const audio = trackAudios.get(idx);
+    const isCurrent = idx === currentIndex && currentAudio === audio;
+    card.classList.toggle('playing', !!isCurrent);
+    card.querySelector('.eq-bars')?.classList.toggle('paused', !isCurrent || audio?.paused !== false);
+  });
+
+  currentCard = currentVisuals(currentIndex).card || null;
+}
+
 /* ── PLAYER BAR CONTROLS ── */
 document.getElementById('btn-play').onclick = () => {
   if (!currentAudio) return;
   if (currentAudio.paused) {
-    currentAudio.play();
-    if (currentCard) currentCard.querySelector('.eq-bars')?.classList.remove('paused');
+    currentAudio.play().catch(() => handleTrackError(currentIndex));
+    const visuals = currentVisuals(currentIndex);
+    currentCard = visuals.card || currentCard;
+    if (visuals.card) visuals.card.classList.add('playing');
+    visuals.eqBars?.classList.remove('paused');
     document.getElementById('icon-play').style.display  = 'none';
     document.getElementById('icon-pause').style.display = '';
   } else {
     currentAudio.pause();
-    if (currentCard) currentCard.querySelector('.eq-bars')?.classList.add('paused');
+    currentVisuals(currentIndex).eqBars?.classList.add('paused');
     document.getElementById('icon-play').style.display  = '';
     document.getElementById('icon-pause').style.display = 'none';
   }
