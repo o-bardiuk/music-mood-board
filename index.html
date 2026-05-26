@@ -1210,7 +1210,6 @@ function renderList() {
     if (currentIndex === globalIdx) {
       card.classList.add('playing');
       eqBars.classList.remove('paused');
-      overlay.querySelector('svg').querySelector('polygon').setAttribute('points', '6 19 18 19 18 5 6 5');
       currentCard = card;
     }
     if (failedTrackIndexes.has(globalIdx)) card.classList.add('broken');
