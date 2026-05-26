@@ -138,6 +138,14 @@
     flex-direction: column;
   }
   .audio-item:hover { border-color: var(--border2); transform: translateY(-2px); }
+  .audio-item.broken {
+    cursor: not-allowed;
+    border-color: rgba(245,100,100,0.35);
+  }
+  .audio-item.broken:hover {
+    border-color: rgba(245,100,100,0.45);
+    transform: none;
+  }
   .audio-item.playing {
     border-color: transparent;
     box-shadow: var(--playing-glow);
@@ -159,6 +167,7 @@
     transition: transform 0.3s ease;
   }
   .audio-item:hover .cover-wrap img { transform: scale(1.04); }
+  .audio-item.broken:hover .cover-wrap img { transform: none; }
 
   .play-overlay {
     position: absolute;
@@ -173,6 +182,24 @@
   .audio-item:hover .play-overlay,
   .audio-item.playing .play-overlay { opacity: 1; }
   .play-overlay svg { width: 36px; height: 36px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6)); }
+  .audio-item.broken:hover .play-overlay,
+  .audio-item.broken.playing .play-overlay { opacity: 0; }
+
+  .broken-overlay {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.58);
+  }
+  .audio-item.broken .broken-overlay { display: flex; }
+  .broken-overlay svg {
+    width: 38px;
+    height: 38px;
+    color: #ff6b6b;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.65));
+  }
 
   /* eq bars animation */
   .eq-bars {
@@ -618,7 +645,7 @@
   let audioFiles = [
     { path: './STUNKIT - Arrival.mp3', tags: ['dnb'], cues: ['01:07', '1:51', '3:21'], albumCover: 'https://i.scdn.co/image/ab67616d00001e0235781a086e3452ead675dd55' },
     { path: './Ollie Wonder - Wave-Rhythm Duality.mp3', group: 'group-1', tags: ['house'], albumCover: 'https://i.scdn.co/image/ab67616d00001e028b0736fb09f0bc0b232f237e' },
-    { path: './Ollie Wonder - Wave-Rhythm Duality (old).mp3', group: 'group-1', tags: ['house'], albumCover: 'https://placehold.co/400?text=old' },
+    { path: './Ollie Wonder - Wave-Rhythm Duality (old)~.mp3', group: 'group-1', tags: ['house'], albumCover: 'https://placehold.co/400?text=old' },
     { path: './Shove Covo - Friends For Ever Be Like.mp3', tags: ['indie'], albumCover: 'https://i.scdn.co/image/ab67616d00001e027388f88c8b3d58f97cfc5061' },
     // Empty example
     // { path: 'file:///', tags: ['', ''], albumCover: 'https://placehold.co/400' },
@@ -878,7 +905,7 @@ function renderCueButtons(file) {
 
 function playTrackByIndex(idx) {
   const card = document.querySelector(`.audio-item[data-idx="${idx}"]`);
-  if (!card) return false;
+  if (!card || card.classList.contains('broken')) return false;
   const audio = card.querySelector('audio');
   const trackVol = card.querySelector('.card-vol input');
   const eqBars = card.querySelector('.eq-bars');
@@ -913,6 +940,11 @@ function finishCurrentTrack(eqBars, overlay) {
   document.getElementById('icon-pause').style.display = 'none';
 }
 
+function markTrackBroken(globalIdx) {
+  failedTrackIndexes.add(globalIdx);
+  document.querySelector(`.audio-item[data-idx="${globalIdx}"]`)?.classList.add('broken');
+}
+
 function handleTrackEnded(globalIdx, audio, eqBars, overlay) {
   if (currentIndex !== globalIdx) return;
 
@@ -933,9 +965,9 @@ function handleTrackEnded(globalIdx, audio, eqBars, overlay) {
 function handleTrackError(globalIdx, eqBars, overlay) {
   if (currentIndex !== globalIdx) return;
 
-  failedTrackIndexes.add(globalIdx);
+  markTrackBroken(globalIdx);
   finishCurrentTrack(eqBars, overlay);
-  playNextTrack(globalIdx, new Set([globalIdx]));
+  if (autoNext) playNextTrack(globalIdx, new Set([globalIdx]));
 }
 
 /* ── RENDER TAGS ── */
@@ -998,6 +1030,16 @@ function renderList() {
     }
     coverWrap.appendChild(overlay);
     coverWrap.appendChild(eqBars);
+
+    const brokenOverlay = document.createElement('div');
+    brokenOverlay.className = 'broken-overlay';
+    brokenOverlay.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M8 8l8 8"/>
+        <path d="M16 8l-8 8"/>
+      </svg>`;
+    coverWrap.appendChild(brokenOverlay);
 
     if (hasSharedGroup(file)) {
       const groupBtn = document.createElement('div');
@@ -1136,6 +1178,7 @@ function renderList() {
     });
     audio.addEventListener('playing', () => {
       failedTrackIndexes.delete(globalIdx);
+      card.classList.remove('broken');
     });
 
     /* if currently playing this track, restore state */
@@ -1145,6 +1188,7 @@ function renderList() {
       overlay.querySelector('svg').querySelector('polygon').setAttribute('points', '6 19 18 19 18 5 6 5');
       currentCard = card;
     }
+    if (failedTrackIndexes.has(globalIdx)) card.classList.add('broken');
 
     list.appendChild(card);
   });
@@ -1164,6 +1208,11 @@ function setPlayingState(playing, eqBars, overlay) {
 }
 
 function playTrack(idx, card, audio, trackVol, eqBars, overlay) {
+  if (failedTrackIndexes.has(idx)) {
+    card.classList.add('broken');
+    return;
+  }
+
   /* if same track: toggle */
   if (currentIndex === idx && currentAudio) {
     if (currentAudio.paused) {
