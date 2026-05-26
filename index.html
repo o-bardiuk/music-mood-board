@@ -859,7 +859,9 @@ progressBar.addEventListener('input', () => {
 const volSlider = document.getElementById('volume-slider');
 volSlider.value = 1;
 volSlider.style.backgroundSize = '100% 100%';
-volSlider.addEventListener('input', () => {
+function setGlobalVolume(value) {
+  globalVolume = Math.max(0, Math.min(1, value));
+  volSlider.value = globalVolume;
   globalVolume = parseFloat(volSlider.value);
   volSlider.style.backgroundSize = (globalVolume * 100).toFixed(1) + '% 100%';
   if (currentAudio) {
@@ -867,7 +869,8 @@ volSlider.addEventListener('input', () => {
     const tv = trackVol ? parseFloat(trackVol.value) : 1;
     currentAudio.volume = Math.min(1, tv * globalVolume);
   }
-});
+}
+volSlider.addEventListener('input', () => setGlobalVolume(parseFloat(volSlider.value)));
 
 function setModeButton(button, active) {
   button.classList.toggle('active', active);
@@ -930,6 +933,14 @@ document.addEventListener('keydown', e => {
   }
   if (e.code === 'ArrowLeft')  document.getElementById('btn-seek-back').click();
   if (e.code === 'ArrowRight') document.getElementById('btn-seek-fwd').click();
+  if (e.code === 'ArrowUp') {
+    e.preventDefault();
+    setGlobalVolume(globalVolume + 0.1);
+  }
+  if (e.code === 'ArrowDown') {
+    e.preventDefault();
+    setGlobalVolume(globalVolume - 0.1);
+  }
   if (/^Digit[0-9]$/.test(e.code)) {
     e.preventDefault();
     const digit = Number(e.code.replace('Digit', ''));
