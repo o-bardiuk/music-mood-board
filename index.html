@@ -244,7 +244,12 @@ function isAudioFile(file) {
   );
 }
 
-function createDroppedTrack(file) {
+function createDropGroupName(files) {
+  const seed = files.map(file => file.name).join('|') + Date.now().toString(36);
+  return `drop-${hashString(seed).toString(36)}`;
+}
+
+function createDroppedTrack(file, group = null) {
   const url = URL.createObjectURL(file);
   droppedObjectUrls.push(url);
   return {
@@ -252,11 +257,18 @@ function createDroppedTrack(file) {
     src: url,
     sourceFile: file,
     tags: ['dropped'],
-    group: null,
+    group,
     cues: [],
     cueTimes: [],
     albumCover: fallbackCover(file.name),
   };
+}
+
+function addToGroupCounts(tracks) {
+  tracks.forEach(track => {
+    if (!track.group) return;
+    groupCounts.set(track.group, (groupCounts.get(track.group) || 0) + 1);
+  });
 }
 
 function shiftTrackStateIndexes(offset) {
@@ -278,11 +290,14 @@ function shiftTrackStateIndexes(offset) {
 }
 
 function addDroppedAudioFiles(fileList) {
-  const tracks = [...fileList].filter(isAudioFile).map(createDroppedTrack);
+  const audioFilesToAdd = [...fileList].filter(isAudioFile);
+  const group = audioFilesToAdd.length > 1 ? createDropGroupName(audioFilesToAdd) : null;
+  const tracks = audioFilesToAdd.map(file => createDroppedTrack(file, group));
   if (!tracks.length) return;
 
   shiftTrackStateIndexes(tracks.length);
   audioFiles.unshift(...tracks);
+  addToGroupCounts(tracks);
   selectedTags.clear();
   renderTags();
   renderList();
