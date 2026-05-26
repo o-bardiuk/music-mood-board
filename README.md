@@ -33,7 +33,7 @@ Fixed bar at the bottom of the screen showing:
 Each card has its own volume slider. It multiplies with the global volume, so you can normalize loud references against quieter mixes without touching the master level.
 
 ### Genre Filtering
-Tags defined per track (e.g. `dnb`, `house`, `metal`, `ref`) appear as filter pills at the top. Click one or more to narrow the grid to only matching tracks. The small badges on each card are clickable too. Each genre gets its own color — both in the filter pills and in the small badges on each card. Click **All** to clear filters.
+Tags defined per track (e.g. `dnb`, `house`, `metal`, `ref`) appear as filter pills at the top. Click one or more to narrow the grid to only matching tracks. The small badges on each card are clickable too. Each tag gets a generated pastel color — both in the filter pills and in the small badges on each card. Click **All** to clear filters.
 
 ### File Path Popover
 Each card has a `?` button in the top-right corner of the cover. Pressing it opens a small panel showing the full file path. A **copy path** button copies it to the clipboard — useful for quickly finding a file in your DAW or file explorer.
@@ -77,17 +77,9 @@ const audioFiles = [
 
 The card title is derived automatically from the filename in `path` (extension stripped), so no separate label field is needed.
 
-### Adding new tag colors
+### Tag colors
 
-Tag colors are defined in CSS. To add a color for a new tag, add two rules:
-
-```css
-/* filter pill */
-.tag-pill[data-tag="mytag"].selected { --accent: #f5d064; --accent-dim: rgba(245,208,100,0.12); }
-
-/* card badge */
-.card-tag[data-tag="mytag"] { color: #f5d064; border-color: rgba(245,208,100,0.35); background: rgba(245,208,100,0.08); }
-```
+Tag colors are generated automatically from the tag name, so adding a new tag in `audioFiles` does not require editing CSS.
 
 ## Browser notes
 
