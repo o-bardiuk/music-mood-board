@@ -248,6 +248,13 @@ function seekAudio(audio, seconds) {
   audio.currentTime = Math.max(0, audio.duration ? Math.min(seconds, audio.duration) : seconds);
 }
 
+function seekCurrentAudioToPercent(percent) {
+  if (!currentAudio || !currentAudio.duration) return;
+  seekAudio(currentAudio, currentAudio.duration * percent);
+  rememberGroupPlaybackTime(currentIndex, currentAudio);
+  updateProgress(currentAudio);
+}
+
 function parseCueTime(value) {
   if (typeof value !== 'string') return NaN;
   const parts = value.trim().split(':').map(part => Number(part));
@@ -844,8 +851,7 @@ document.getElementById('btn-seek-fwd').onclick = () => {
 const progressBar = document.getElementById('progress-bar');
 progressBar.addEventListener('input', () => {
   if (currentAudio && currentAudio.duration) {
-    currentAudio.currentTime = (progressBar.value / 100) * currentAudio.duration;
-    rememberGroupPlaybackTime(currentIndex, currentAudio);
+    seekCurrentAudioToPercent(progressBar.value / 100);
     progressBar.style.backgroundSize = progressBar.value + '% 100%';
   }
 });
@@ -924,6 +930,11 @@ document.addEventListener('keydown', e => {
   }
   if (e.code === 'ArrowLeft')  document.getElementById('btn-seek-back').click();
   if (e.code === 'ArrowRight') document.getElementById('btn-seek-fwd').click();
+  if (/^Digit[0-9]$/.test(e.code)) {
+    e.preventDefault();
+    const digit = Number(e.code.replace('Digit', ''));
+    seekCurrentAudioToPercent(digit / 10);
+  }
 });
 
 /* ── INIT ── */
