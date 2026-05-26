@@ -6,7 +6,7 @@ A single-file local HTML audio player for comparing your own mixes and reference
 
 ## What it does
 
-You drop your audio file paths into a JS array at the top of the file, assign each track a genre tag and an album cover image, and the page renders a grid of cards. Click a cover to play. Only one track plays at a time — starting another pauses the current one automatically.
+You drop your audio file paths into a JS array at the top of the file, assign each track a genre tag, and the page renders a grid of cards. Click a cover to play. Only one track plays at a time — starting another pauses the current one automatically.
 
 It's designed for the specific workflow of comparing your own mixes against reference tracks: quickly jumping between takes, adjusting relative levels, and keeping everything organized by genre.
 
@@ -73,7 +73,7 @@ const audioFiles = [
 | `tags` | Array of genre strings — used for filtering and color coding |
 | `group` | Optional shared playback group. When two or more tracks use the same group, switching between them keeps the same playback time. |
 | `cues` | Optional array of cue times. Use `M:SS`, `MM:SS`, or `H:MM:SS`; buttons are numbered automatically. |
-| `albumCover` | Any image URL or local relative path |
+| `albumCover` | Optional image URL or local relative path. Missing covers use a generated `placehold.co` image with the filename and app-matched colors. |
 
 The card title is derived automatically from the filename in `path` (extension stripped), so no separate label field is needed.
 

@@ -645,8 +645,9 @@
   let audioFiles = [
     { path: './STUNKIT - Arrival.mp3', tags: ['dnb'], cues: ['01:07', '1:51', '3:21'], albumCover: 'https://i.scdn.co/image/ab67616d00001e0235781a086e3452ead675dd55' },
     { path: './Ollie Wonder - Wave-Rhythm Duality.mp3', group: 'group-1', tags: ['house'], albumCover: 'https://i.scdn.co/image/ab67616d00001e028b0736fb09f0bc0b232f237e' },
-    { path: './Ollie Wonder - Wave-Rhythm Duality (old)~.mp3', group: 'group-1', tags: ['house'], albumCover: 'https://placehold.co/400?text=old' },
+    { path: './Ollie Wonder - Wave-Rhythm Duality (old).mp3', group: 'group-1', tags: ['house'], albumCover: 'https://placehold.co/400?text=custom-cover' },
     { path: './Shove Covo - Friends For Ever Be Like.mp3', tags: ['indie'], albumCover: 'https://i.scdn.co/image/ab67616d00001e027388f88c8b3d58f97cfc5061' },
+    { path: '.broken-file.mp3', tags: ['phonk']},
     // Empty example
     // { path: 'file:///', tags: ['', ''], albumCover: 'https://placehold.co/400' },
     // Absolute path example
@@ -726,6 +727,30 @@
 </div>
 
 <script>
+function hashString(value) {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function fallbackCover(path) {
+  const label = fileLabel(path || 'audio');
+  const palettes = [
+    ['0d0d0f', 'c8f564'],
+    ['16161a', '64c8f5'],
+    ['1e1e24', 'f5a064'],
+    ['0d0d0f', 'f564a0'],
+    ['16161a', 'a064f5'],
+    ['1e1e24', 'f5d064'],
+    ['101014', 'e8e6e3'],
+  ];
+  const [bg, fg] = palettes[hashString(label) % palettes.length];
+  return `https://placehold.co/300/${bg}/${fg}/png?text=${encodeURIComponent(label)}`;
+}
+
 audioFiles = audioFiles.map((file, index) => {
   if (!file || typeof file.path !== 'string' || file.path.trim() === '') {
     console.warn(`Skipping audioFiles[${index}]: missing path`);
@@ -746,7 +771,7 @@ audioFiles = audioFiles.map((file, index) => {
     cueTimes: Array.isArray(file.cues) ? file.cues.map(parseCueTime).filter(Number.isFinite) : [],
     albumCover: typeof file.albumCover === 'string' && file.albumCover.trim() !== ''
       ? file.albumCover
-      : 'https://placehold.co/400/0d0d0f/e8e6e3?text=audio',
+      : fallbackCover(file.path),
   };
 }).filter(Boolean);
 
@@ -850,7 +875,7 @@ function createDroppedTrack(file) {
     group: null,
     cues: [],
     cueTimes: [],
-    albumCover: 'https://placehold.co/400/0d0d0f/f5d064?text=' + file.name,
+    albumCover: fallbackCover(file.name),
   };
 }
 
