@@ -63,6 +63,7 @@ const audioFiles = [
     cues: ['00:11', '1:05:30'],
     albumCover: 'https://example.com/cover.jpg',
   },
+  { divider: 'Reference mixes' },
   // ...
 ];
 ```
@@ -74,6 +75,7 @@ const audioFiles = [
 | `group` | Optional shared playback group. When two or more tracks use the same group, switching between them keeps the same playback time. |
 | `cues` | Optional array of cue times. Use `M:SS`, `MM:SS`, or `H:MM:SS`; buttons are numbered automatically. |
 | `albumCover` | Optional image URL or local relative path. Missing covers use a generated `placehold.co` image with the filename and app-matched colors. |
+| `divider` | Optional separator entry, not a track. Use `{ divider: true }` for spacing or `{ divider: 'Section name' }` for a labeled line break. |
 
 The card title is derived automatically from the filename in `path` (extension stripped), so no separate label field is needed.
 
