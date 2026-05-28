@@ -63,7 +63,17 @@ const audioFiles = [
   // ...
 ];
 ```
+> [!WARNING]
+> If the file path contains ' _(single quote)_ the whole file path should be in double quotes or the ' sign should be escaped with a backslash. Examples:
 
+`{ path: 'file:///d:/MUSIC/Apashe & High Klassified ft. Cherry Lena - I\'m Fine (IMANU Remix).mp3' }`  
+or  
+`{ path: "file:///d:/MUSIC/Apashe & High Klassified ft. Cherry Lena - I'm Fine (IMANU Remix).mp3" }`  
+
+> [!CAUTION]
+> If you allow syntax error in the `audioFiles` array, the app will not work. Make sure to check the browser console for errors if something is not working.
+  
+  
 | Field | Description |
 |-------|-------------|
 | `path` | Absolute local path (`file:///...`) or relative path (`./folder/file.mp3`) |
@@ -130,6 +140,16 @@ const audioFiles = [
   // ...
 ];
 ```
+> [!WARNING]
+> Якщо шлях до файлу містить символ ' (апостроф), весь шлях до файлу слід взяти в подвійні лапки або символ ' слід екранувати за допомогою зворотної косої риски. Приклади:
+
+`{ path: 'file:///d:/MUSIC/Apashe & High Klassified ft. Cherry Lena - I\'m Fine (IMANU Remix).mp3' }`  
+or  
+`{ path: "file:///d:/MUSIC/Apashe & High Klassified ft. Cherry Lena - I'm Fine (IMANU Remix).mp3" }`
+
+> [!CAUTION]
+> Якщо у масиві `audioFiles` будуть синтаксичні помилки, додаток не працюватиме. Якщо щось не працює, обов’язково перевірте консоль браузера на наявність помилок.
+
 
 | Поле | Опис |
 |-------|-------------|
