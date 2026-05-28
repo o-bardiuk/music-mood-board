@@ -1019,8 +1019,14 @@ document.addEventListener('keydown', e => {
     e.preventDefault();
     document.getElementById('btn-play').click();
   }
-  if (e.code === 'ArrowLeft')  document.getElementById('btn-seek-back').click();
-  if (e.code === 'ArrowRight') document.getElementById('btn-seek-fwd').click();
+  if (e.code === 'ArrowLeft') {
+    e.preventDefault();
+    document.getElementById('btn-seek-back').click();
+  }
+  if (e.code === 'ArrowRight') {
+    e.preventDefault();
+    document.getElementById('btn-seek-fwd').click();
+  }
   if (e.code === 'ArrowUp') {
     e.preventDefault();
     setGlobalVolume(globalVolume + 0.1);
