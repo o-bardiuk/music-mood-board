@@ -25,12 +25,12 @@ Fixed bar at the bottom of the screen showing:
 - Optional numbered cue buttons for quick jumps within the current track
 - Play/Pause, seek back 5 seconds, seek forward 5 seconds buttons
 - Optional track groups for comparing different mixes at the same playback time
-- Global volume slider affecting all tracks
+- Global volume slider affecting all tracks, saved in the URL hash as `#volume=0.80` and restored on reload
 - Repeat-one and play-next toggles for choosing what happens when a track ends. These modes are mutually exclusive; play-next wraps from the last visible track back to the first.
 - Broken or missing audio files are skipped during playback instead of stopping the player.
 
 ### Per-Track Volume
-Each card has its own volume slider. It multiplies with the global volume, so you can normalize loud references against quieter mixes without touching the master level.
+Each card has its own gain slider. The middle is normal `100%`, left fades down to `0%`, and right allows up to `200%` before the browser's final audio volume cap.
 
 ### Genre Filtering
 Tags defined per track (e.g. `dnb`, `house`, `metal`, `ref`) appear as filter pills at the top. Click one or more to narrow the grid to only matching tracks. The small badges on each card are clickable too. Each tag gets a generated pastel color — both in the filter pills and in the small badges on each card. Click **All** to clear filters.
