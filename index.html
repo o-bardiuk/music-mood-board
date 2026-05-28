@@ -31,6 +31,7 @@
 </script>
 
 <div class="kbd-hint">
+  <kbd>1</kbd>-<kbd>9</kbd> navigate song progress &nbsp; <kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd><kbd>R</kbd><kbd>T</kbd><kbd>Y</kbd> navigate cues<br>
   <kbd>Space</kbd> play/pause &nbsp; <kbd>←</kbd><kbd>→</kbd> seek 5s &nbsp; click cover to play
 </div>
 
@@ -289,6 +290,14 @@ function seekAudio(audio, seconds) {
 function seekCurrentAudioToPercent(percent) {
   if (!currentAudio || !currentAudio.duration) return;
   seekAudio(currentAudio, currentAudio.duration * percent);
+  rememberGroupPlaybackTime(currentIndex, currentAudio);
+  updateProgress(currentAudio);
+}
+
+function seekCurrentCue(index) {
+  const cueTime = audioFiles[currentIndex]?.cueTimes?.[index];
+  if (!currentAudio || !Number.isFinite(cueTime)) return;
+  seekAudio(currentAudio, cueTime);
   rememberGroupPlaybackTime(currentIndex, currentAudio);
   updateProgress(currentAudio);
 }
@@ -1006,7 +1015,6 @@ document.addEventListener('click', e => {
 
 /* ── KEYBOARD ── */
 document.addEventListener('keydown', e => {
-  if (e.target.tagName === 'INPUT') return;
   if (e.code === 'Space') {
     e.preventDefault();
     document.getElementById('btn-play').click();
@@ -1025,6 +1033,11 @@ document.addEventListener('keydown', e => {
     e.preventDefault();
     const digit = Number(e.code.replace('Digit', ''));
     seekCurrentAudioToPercent(digit / 10);
+  }
+  const cueKeyIndex = ['KeyQ', 'KeyW', 'KeyE', 'KeyR', 'KeyT', 'KeyY'].indexOf(e.code);
+  if (cueKeyIndex >= 0) {
+    e.preventDefault();
+    seekCurrentCue(cueKeyIndex);
   }
 });
 
