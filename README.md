@@ -2,6 +2,7 @@
 
 * [🇬🇧 English](#music-mood-board)
 * [🇺🇦 Українська](#музична-дошка-настрою)
+### [Demo / Демо](https://o-bardiuk.github.io/music-mood-board/)
 
 # Music Mood Board
 
