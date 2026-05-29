@@ -60,7 +60,7 @@ const audioFiles = [
     cues: ['00:11', '1:05:30'],
     albumCover: 'https://example.com/cover.jpg',
   },
-  { divider: 'Reference mixes' },
+  { divider: 'Reference mixes', note: '<strong>Listen for low-end balance.</strong><br>These are comparison tracks.' },
   // ...
 ];
 ```
@@ -83,6 +83,7 @@ or
 | `cues` | Optional array of cue times. Use `M:SS`, `MM:SS`, or `H:MM:SS`; buttons are numbered automatically. |
 | `albumCover` | Optional image URL or local relative path. Missing covers use a generated `placehold.co` image with the filename and app-matched colors. |
 | `divider` | Optional separator entry, not a track. Use `{ divider: true }` for spacing or `{ divider: 'Section name' }` for a labeled line break. |
+| `note` | Optional HTML note for divider entries. When present, the divider shows a `?` button with a popover. |
 
 # Музична Дошка Настрою
 
@@ -138,7 +139,7 @@ const audioFiles = [
     cues: ['00:11', '1:05:30'],
     albumCover: 'https://example.com/cover.jpg',
   },
-  { divider: 'Reference mixes' },
+  { divider: 'Reference mixes', note: '<strong>Послухати баланс низу.</strong><br>Це треки для порівняння.' },
   // ...
 ];
 ```
@@ -161,3 +162,4 @@ const audioFiles = [
 | `cues` | Необов’язковий масив cue-точок. Використовуйте формат `M:SS`, `MM:SS` або `H:MM:SS`; кнопки нумеруються автоматично. |
 | `albumCover` | Необов’язкове URL-зображення або локальний відносний шлях. Якщо обкладинка відсутня, використовується автоматично згенероване зображення `placehold.co` з назвою файлу та кольорами додатка. |
 | `divider` | Необов’язковий роздільник, не є треком. Використовуйте `{ divider: true }` для відступу або `{ divider: 'Назва секції' }` для підписаного розділення. |
+| `note` | Необов’язкова HTML-нотатка для роздільника. Якщо вона є, роздільник показує кнопку `?` з поповером. |
