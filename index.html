@@ -31,7 +31,7 @@
 </script>
 
 <div class="kbd-hint">
-  <kbd>1</kbd>-<kbd>9</kbd> navigate song progress &nbsp; <kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd><kbd>R</kbd><kbd>T</kbd><kbd>Y</kbd> navigate cues<br>
+  <kbd>1</kbd>-<kbd>9</kbd> navigate song progress &nbsp; <kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd><kbd>R</kbd><kbd>T</kbd><kbd>Y</kbd> navigate cues &nbsp; <kbd>Z</kbd> previous track<br>
   <kbd>Space</kbd> play/pause &nbsp; <kbd>←</kbd><kbd>→</kbd> seek 5s &nbsp; click cover to play
 </div>
 
@@ -204,6 +204,7 @@ function setNowTitle(title) {
 let globalVolume = 1;
 let currentAudio = null;
 let currentIndex = -1;
+let previousTrackIndex = -1;
 let currentCard  = null;
 let repeatOne = false;
 let autoNext = false;
@@ -387,6 +388,7 @@ function shiftTrackStateIndexes(offset) {
   shiftedFailures.forEach(idx => failedTrackIndexes.add(idx));
 
   if (currentIndex >= 0) currentIndex += offset;
+  if (previousTrackIndex >= 0) previousTrackIndex += offset;
 }
 
 function addDroppedAudioFiles(fileList) {
@@ -519,6 +521,20 @@ function nextTrackIndex(fromIdx, skipped = new Set()) {
 function playNextTrack(fromIdx, skipped = new Set(), options = {}) {
   const nextIdx = nextTrackIndex(fromIdx, skipped);
   return nextIdx >= 0 && playTrackByIndex(nextIdx, options);
+}
+
+function playPreviousTrackShortcut() {
+  if (previousTrackIndex < 0 || previousTrackIndex === currentIndex) return;
+  const previousFile = audioFiles[previousTrackIndex];
+  if (!previousFile || previousFile.divider || failedTrackIndexes.has(previousTrackIndex)) return;
+
+  if (!currentVisuals(previousTrackIndex).card) {
+    selectedTags.clear();
+    renderTags();
+    renderList();
+  }
+
+  playTrackByIndex(previousTrackIndex);
 }
 
 function finishCurrentTrack(eqBars, overlay) {
@@ -823,6 +839,7 @@ function playTrack(idx, card, audio, trackVol, eqBars, overlay, options = {}) {
     }
   }
 
+  if (currentIndex >= 0) previousTrackIndex = currentIndex;
   currentAudio = audio;
   currentIndex = idx;
   currentCard  = card;
@@ -1045,6 +1062,10 @@ document.addEventListener('keydown', e => {
   if (cueKeyIndex >= 0) {
     e.preventDefault();
     seekCurrentCue(cueKeyIndex);
+  }
+  if (e.code === 'KeyZ') {
+    e.preventDefault();
+    playPreviousTrackShortcut();
   }
 });
 

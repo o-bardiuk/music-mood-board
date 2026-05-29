@@ -24,6 +24,7 @@ No installation or server setup is required.
 - Drag audio files onto the page to add temporary cards at the beginning of the list for the current session. Dropping multiple files at once puts that batch into a temporary shared playback group.
 - Use keys from `[1]` to `[0]` for navigation throughout the track by percentage where `[5]` means 50% of the track duration.
 - Keys `[q]`, `[w]`, `[e]`, etc. jump to cue points defined in the `cues` array for the current track. Cues are numbered automatically, so you can add or change them without worrying about the shortcuts.
+- Key `[z]` toggles playback between previous track and current. Helps to quickly A/B compare two tracks without scrolling, helps when tracks are far from each other.
 
 ### Now-Playing Bar (bottom)
 Fixed bar at the bottom of the screen showing:
@@ -101,6 +102,7 @@ or
 - Перетягніть аудіофайли на сторінку, щоб додати тимчасові картки на початок списку для поточної сесії. Якщо перетягнути декілька файлів одночасно, вони автоматично потраплять у спільну тимчасову групу відтворення.
 - Використовуйте клавіші від `[1]` до `[0]` для навігації по треку за відсотками, де `[5]` означає 50% тривалості треку.
 - Клавіші `[q]`, `[w]`, `[e]` тощо перемикають до cue-точок, визначених у масиві `cues` для поточного треку. Cue-точки нумеруються автоматично, тому ви можете додавати та змінювати їх без необхідності думати про гарячі клавіші.
+- Клавіша `[z]` перемикає програвання між поточним треком і попереднім (для швидкого порівняння без клікання мишкою, допомагає якщо треки далеко один від одного).
 
 ### Панель поточного треку (внизу)
 Фіксована панель у нижній частині екрана показує:
