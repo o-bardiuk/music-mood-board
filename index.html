@@ -112,6 +112,7 @@ function hashString(value) {
 
 function fallbackCover(path) {
   const label = fileLabel(path || 'audio');
+  const shortLabel = label.slice(0, 10);
   const palettes = [
     ['0d0d0f', 'c8f564'],
     ['16161a', '64c8f5'],
@@ -122,7 +123,7 @@ function fallbackCover(path) {
     ['101014', 'e8e6e3'],
   ];
   const [bg, fg] = palettes[hashString(label) % palettes.length];
-  return `https://placehold.co/300/${bg}/${fg}/png?text=${encodeURIComponent(label)}`;
+  return `https://placehold.co/300/${bg}/${fg}/png?text=${encodeURIComponent(shortLabel)}`;
 }
 
 audioFiles = audioFiles.map((file, index) => {

@@ -144,7 +144,7 @@ const audioFiles = [
 > Якщо шлях до файлу містить символ ' (апостроф), весь шлях до файлу слід взяти в подвійні лапки або символ ' слід екранувати за допомогою зворотної косої риски. Приклади:
 
 `{ path: 'file:///d:/MUSIC/Apashe & High Klassified ft. Cherry Lena - I\'m Fine (IMANU Remix).mp3' }`  
-or  
+чи
 `{ path: "file:///d:/MUSIC/Apashe & High Klassified ft. Cherry Lena - I'm Fine (IMANU Remix).mp3" }`
 
 > [!CAUTION]
